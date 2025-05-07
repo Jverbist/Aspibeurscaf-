@@ -1,11 +1,13 @@
 services:
   stock-cafe:
     build:
-      context: ../  # context is aspibeurscafe/
+      context: ../
       dockerfile: backend/Dockerfile
+    working_dir: /app
     ports:
       - "8000:8000"
-    working_dir: /app
     volumes:
       - ../:/app
+      - ../data:/app/data  # 👈 mount the data directory explicitly
+
 
