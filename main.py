@@ -52,3 +52,11 @@ def manage_page(request: Request, db: Session = Depends(get_db), user: str = Dep
 def sell_drink(drink_id: int = Form(...), db: Session = Depends(get_db), user: str = Depends(authenticate)):
     crud.record_sale(db, drink_id)
     return RedirectResponse(url="/manage", status_code=303)
+
+@app.get("/history/{drink_id}")
+def get_price_history(drink_id: int, db: Session = Depends(get_db)):
+    history = db.query(models.PriceHistory).filter(models.PriceHistory.drink_id == drink_id).order_by(models.PriceHistory.timestamp).all()
+    return JSONResponse(content={
+        "timestamps": [h.timestamp.isoformat() for h in history],
+        "prices": [h.price for h in history]
+    })

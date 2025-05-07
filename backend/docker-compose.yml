@@ -1,0 +1,11 @@
+services:
+  stock-cafe:
+    build:
+      context: ../  # context is aspibeurscafe/
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    volumes:
+      - ../:/app
+
