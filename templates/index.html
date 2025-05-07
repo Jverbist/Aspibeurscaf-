@@ -45,6 +45,7 @@ const chart = new Chart(ctx, {
     }
 });
 
+
 function updateChart() {
     fetch("/api/history/all")
         .then(res => res.json())
@@ -53,10 +54,13 @@ function updateChart() {
             chart.data.datasets = [];
 
             const allTimestamps = new Set();
-
             Object.values(data).forEach(d => d.timestamps.forEach(t => allTimestamps.add(t)));
+
             const sorted = Array.from(allTimestamps).sort();
-            chart.data.labels = sorted;
+            chart.data.labels = sorted.map(ts => {
+                const date = new Date(ts);
+                return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            });
 
             let i = 0;
             for (const [name, info] of Object.entries(data)) {
@@ -77,6 +81,7 @@ function updateChart() {
             chart.update();
         });
 }
+
 
 updateChart();
 setInterval(updateChart, 5000);
