@@ -8,6 +8,7 @@ import secrets
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 import crud, models
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 security = HTTPBasic()
@@ -61,20 +62,34 @@ def get_price_history(drink_id: int, db: Session = Depends(get_db)):
         "prices": [h.price for h in history]
     })
 
+@app.post("/reset")
+def reset_prices(db: Session = Depends(get_db), user: str = Depends(authenticate)):
+    drinks = db.query(models.Drink).all()
+    for drink in drinks:
+        drink.current_price = drink.base_price
+        drink.total_sold = 0
+    db.commit()
+    return RedirectResponse(url="/manage", status_code=303)
 
 @app.on_event("startup")
 def startup_event():
     db = next(get_db())
     if db.query(models.Drink).count() == 0:
-        print("🌱 Seeding initial drinks...")
-        default_drinks = [
-            {"name": "Beer", "base_price": 3.0},
-            {"name": "Cola", "base_price": 2.5},
-            {"name": "Mojito", "base_price": 5.5},
-            {"name": "Whiskey", "base_price": 6.0},
-            {"name": "Water", "base_price": 1.5},
+        print("🌱 Seeding updated drink list...")
+        drinks = [
+            {"name": "Stella", "base_price": 2.5},
+            {"name": "Kriek", "base_price": 2.5},
+            {"name": "Sommersby", "base_price": 2.5},
+            {"name": "Duvel", "base_price": 3.0},
+            {"name": "Tequilla", "base_price": 4.0},
+            {"name": "Fruitsap", "base_price": 2.0},
+            {"name": "Non bruisende grenadine", "base_price": 1.5},
+            {"name": "Witte wijn", "base_price": 3.5},
+            {"name": "Jenever", "base_price": 2.5},
+            {"name": "Chouffe", "base_price": 3.0},
+            {"name": "Carolus triple", "base_price": 3.0}
         ]
-        for d in default_drinks:
+        for d in drinks:
             drink = models.Drink(
                 name=d["name"],
                 base_price=d["base_price"],
@@ -83,3 +98,33 @@ def startup_event():
             )
             db.add(drink)
         db.commit()
+
+
+@app.get("/api/prices")
+def get_prices(db: Session = Depends(get_db)):
+    drinks = db.query(models.Drink).all()
+    return JSONResponse([
+        {"name": d.name, "price": d.current_price, "sold": d.total_sold}
+        for d in drinks
+    ])
+
+
+@app.get("/history/{drink_id}")
+def get_price_history(drink_id: int, db: Session = Depends(get_db)):
+    history = db.query(models.PriceHistory).filter(models.PriceHistory.drink_id == drink_id).order_by(models.PriceHistory.timestamp).all()
+    return {
+        "timestamps": [p.timestamp.isoformat() for p in history],
+        "prices": [p.price for p in history]
+    }
+
+
+@app.get("/api/history/all")
+def get_all_price_history(db: Session = Depends(get_db)):
+    drinks = db.query(models.Drink).all()
+    result = {}
+    for drink in drinks:
+        result[drink.name] = {
+            "timestamps": [h.timestamp.isoformat() for h in drink.history],
+            "prices": [h.price for h in drink.history]
+        }
+    return result
