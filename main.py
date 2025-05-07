@@ -77,23 +77,22 @@ def startup_event():
     if db.query(models.Drink).count() == 0:
         print("🌱 Seeding updated drink list...")
         drinks = [
-            {"name": "Stella", "base_price": 2.5},
-            {"name": "Kriek", "base_price": 2.5},
-            {"name": "Sommersby", "base_price": 2.5},
-            {"name": "Duvel", "base_price": 3.0},
-            {"name": "Tequilla", "base_price": 4.0},
-            {"name": "Fruitsap", "base_price": 2.0},
-            {"name": "Non bruisende grenadine", "base_price": 1.5},
-            {"name": "Witte wijn", "base_price": 3.5},
-            {"name": "Jenever", "base_price": 2.5},
-            {"name": "Chouffe", "base_price": 3.0},
-            {"name": "Carolus triple", "base_price": 3.0}
+            {"name": "Stella", "base_price": 2.5, "min_price": 1.5},
+            {"name": "Kriek", "base_price": 2.5, "min_price": 1.75},
+            {"name": "Sommersby", "base_price": 2.5, "min_price": 1.75},
+            {"name": "Duvel", "base_price": 4.0, "min_price": 2.5},
+            {"name": "Tequilla Sunrise", "base_price": 4.0, "min_price": 2.5},
+            {"name": "Witte wijn", "base_price": 3.5, "min_price": 2.0},
+            {"name": "Jenever", "base_price": 2.5, "min_price": 0.5},
+            {"name": "Chouffe", "base_price": 4.0, "min_price": 2.5},
+            {"name": "Carolus triple", "base_price": 4.0, "min_price": 2.5}
         ]
         for d in drinks:
             drink = models.Drink(
                 name=d["name"],
                 base_price=d["base_price"],
                 current_price=d["base_price"],
+                min_price=d["min_price"],
                 total_sold=0
             )
             db.add(drink)
@@ -128,3 +127,10 @@ def get_all_price_history(db: Session = Depends(get_db)):
             "prices": [h.price for h in drink.history]
         }
     return result
+
+
+@app.post("/reset-history")
+def reset_history(db: Session = Depends(get_db), user: str = Depends(authenticate)):
+    db.query(models.PriceHistory).delete()
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)

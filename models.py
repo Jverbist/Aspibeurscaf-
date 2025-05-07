@@ -10,6 +10,7 @@ class Drink(Base):
     name = Column(String, unique=True)
     base_price = Column(Float)
     current_price = Column(Float)
+    min_price = Column(Float, default=0.5)
     total_sold = Column(Integer, default=0)
     history = relationship("PriceHistory", back_populates="drink")
 

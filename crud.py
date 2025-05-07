@@ -24,7 +24,7 @@ def record_sale(db: Session, drink_id: int):
         for drink in all_drinks:
             if drink.id != drink_id:
                 new_price = round_price(drink.current_price - 0.10)
-                drink.current_price = max(new_price, 0.5)
+                drink.current_price = max(new_price, drink.min_price)
 
         # Record new price
         db.add(PriceHistory(drink_id=sold_drink.id, price=sold_drink.current_price, timestamp=datetime.utcnow()))
